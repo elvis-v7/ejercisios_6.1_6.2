@@ -1,0 +1,14 @@
+C:\Users\yonsd\Downloads\equipo6_6.1\ej6.1\bin\Debug\net10.0\ej6.1.exe
+C:\Users\yonsd\Downloads\equipo6_6.1\ej6.1\bin\Debug\net10.0\ej6.1.deps.json
+C:\Users\yonsd\Downloads\equipo6_6.1\ej6.1\bin\Debug\net10.0\ej6.1.runtimeconfig.json
+C:\Users\yonsd\Downloads\equipo6_6.1\ej6.1\bin\Debug\net10.0\ej6.1.dll
+C:\Users\yonsd\Downloads\equipo6_6.1\ej6.1\bin\Debug\net10.0\ej6.1.pdb
+C:\Users\yonsd\Downloads\equipo6_6.1\ej6.1\obj\Debug\net10.0\ej6.1.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\yonsd\Downloads\equipo6_6.1\ej6.1\obj\Debug\net10.0\ej6.1.AssemblyInfoInputs.cache
+C:\Users\yonsd\Downloads\equipo6_6.1\ej6.1\obj\Debug\net10.0\ej6.1.AssemblyInfo.cs
+C:\Users\yonsd\Downloads\equipo6_6.1\ej6.1\obj\Debug\net10.0\ej6.1.csproj.CoreCompileInputs.cache
+C:\Users\yonsd\Downloads\equipo6_6.1\ej6.1\obj\Debug\net10.0\ej6.1.dll
+C:\Users\yonsd\Downloads\equipo6_6.1\ej6.1\obj\Debug\net10.0\refint\ej6.1.dll
+C:\Users\yonsd\Downloads\equipo6_6.1\ej6.1\obj\Debug\net10.0\ej6.1.pdb
+C:\Users\yonsd\Downloads\equipo6_6.1\ej6.1\obj\Debug\net10.0\ej6.1.genruntimeconfig.cache
+C:\Users\yonsd\Downloads\equipo6_6.1\ej6.1\obj\Debug\net10.0\ref\ej6.1.dll

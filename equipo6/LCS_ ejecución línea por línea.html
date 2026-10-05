@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LCS: ejecución línea por línea</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f7f7f4;--fg:#1d1d1b;--mut:#77756f;--card:#fff;--bd:#dcdad3;--cur:#ffd54a;--ok:#c9f0d0;--re:#a9d4ff;--path:#ffb4a2;--ac:#2f6fed;--ln:#fff3b0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171716;--fg:#ecebe6;--mut:#9a988f;--card:#222220;--bd:#3a3935;--cur:#b8860b;--ok:#24472e;--re:#27598f;--path:#9c4a35;--ac:#6c9cff;--ln:#5a4b00}}
+:root[data-theme="dark"]{--bg:#171716;--fg:#ecebe6;--mut:#9a988f;--card:#222220;--bd:#3a3935;--cur:#b8860b;--ok:#24472e;--re:#27598f;--path:#9c4a35;--ac:#6c9cff;--ln:#5a4b00}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1000px;margin:0 auto;padding:14px}
+h1{font-size:1.2rem;margin:.2rem 0 .7rem}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;margin-bottom:12px}
+.hd{font-size:.8rem;color:var(--mut);font-weight:600;margin-bottom:6px;text-transform:uppercase}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+input[type=text]{font:inherit;padding:5px 8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);width:9em;text-transform:uppercase;letter-spacing:.1em}
+button{font:inherit;padding:6px 11px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--fg);cursor:pointer}
+button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+button:disabled{opacity:.4}
+.grid{display:grid;grid-template-columns:1.1fr 1fr;gap:12px}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+#cb{position:relative;max-height:440px;overflow:auto;font:.8rem/1.45 ui-monospace,Menlo,Consolas,monospace}
+.ln{white-space:pre;padding:0 6px}
+.ln.on{background:var(--ln);font-weight:700}
+.no{display:inline-block;width:2.2em;color:var(--mut);font-weight:400}
+#msg{font-size:1.02rem;min-height:3.4em}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;margin:auto;font:.82rem ui-monospace,Menlo,Consolas,monospace}
+td,th{width:2.2em;height:2.2em;text-align:center;border:1px solid var(--bd)}
+th{color:var(--mut);border:none}
+td{background:var(--ok)}td.u{background:none;color:var(--mut)}
+td.re{background:var(--re)}td.path{background:var(--path)}
+td.cur{background:var(--cur);font-weight:700;outline:2px solid var(--fg)}
+th.h{color:var(--fg);background:var(--cur);border-radius:4px}
+.lg{font-size:.78rem;color:var(--mut);margin-top:6px}
+.vs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;font:.85rem ui-monospace,Menlo,monospace}
+.fr{font:.82rem ui-monospace,Menlo,monospace;padding:2px 6px;border:1px solid var(--bd);border-radius:6px;margin-top:3px}
+.fr.top{background:var(--cur)}
+pre{margin:0;font:.85rem ui-monospace,Menlo,monospace;min-height:1.4em}
+code{font-family:ui-monospace,Menlo,Consolas,monospace}
+</style></head><body><main>
+<h1>EJECUCION LINEA POR LINEA</h1>
+
+<div class="card row">
+ <label>text1 <input type="text" id="a" value="ATCGGATTC" maxlength="10"></label>
+ <label>text2 <input type="text" id="b" value="TAGCCTAAG" maxlength="10"></label>
+ <button class="p" id="go">Cargar</button>
+ <span style="color:var(--mut);font-size:.8rem">Máx. 10 letras. Con "AB" y "BA" es cortito.</span>
+</div>
+
+<div class="card"><div id="msg"></div></div>
+
+<div class="card row">
+ <button id="rs">⏮</button><button id="pv">◀ Anterior</button>
+ <button class="p" id="pl">▶ Auto</button><button id="nx">Siguiente ▶</button>
+ <button id="bk">Ir a la reconstrucción</button><button id="en">⏭</button>
+ <label style="margin-left:auto;font-size:.8rem">Velocidad <input type="range" id="sp" min="1" max="10" value="6" style="width:90px"></label>
+ <span id="cnt" style="color:var(--mut);font-size:.8rem"></span>
+</div>
+
+<div class="grid">
+ <div class="card"><div class="hd">Código C# (línea en ejecución resaltada)</div><div id="cb"><div id="code"></div></div></div>
+ <div>
+  <div class="card tw"><div class="hd">memo[i, j]</div><table id="t"></table>
+   <div class="lg">amarillo = celda de la llamada actual · azul = valor reutilizado · rojo = camino de reconstrucción · -1 = sin calcular</div></div>
+  <div class="card">
+   <div class="hd">Variables de Main</div><div class="vs" id="vars"></div>
+   <div class="hd" style="margin-top:10px">Pila de llamadas (arriba = actual)</div><div id="st"></div>
+  </div>
+ </div>
+</div>
+<div class="card"><div class="hd">Consola</div><pre id="out"></pre></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+let A,B,m,n,C,K,memo,stack,vars,out,steps,k,timer=null,path=null;
+
+function code(){return[
+['t1',`string text1 = "${A}";`],['t2',`string text2 = "${B}";`],
+['m','int m = text1.Length;'],['n','int n = text2.Length;'],
+['mk','int[,] memo = new int[m + 1, n + 1];'],
+['f1','for (int i = 0; i <= m; i++)'],['f2','    for (int j = 0; j <= n; j++)'],['f3','        memo[i, j] = -1;'],
+['lc','int longitud = Lcs(text1, text2, m, n, memo);'],
+['rs','string resultado = "";'],['x','int x = m;'],['y','int y = n;'],
+['wh','while (x > 0 && y > 0)'],
+['eq','    if (text1[x - 1] == text2[y - 1])'],
+['ad','        resultado = text1[x - 1] + resultado;'],['dx','        x--;'],['dy','        y--;'],
+['ei','    else if (memo[x - 1, y] >= memo[x, y - 1])'],['dx2','        x--;'],
+['el','    else'],['dy2','        y--;'],
+['w1','Console.WriteLine("Texto 1: " + text1);'],['w2','Console.WriteLine("Texto 2: " + text2);'],
+['w3','Console.WriteLine("Longitud: " + longitud);'],['w4','Console.WriteLine("Secuencia: " + resultado);'],
+['fn','static int Lcs(string text1, string text2, int i, int j, int[,] memo)'],
+['b1','    if (i == 0 || j == 0)'],['b2','        return 0;'],
+['m1','    if (memo[i, j] != -1)'],['m2','        return memo[i, j];'],
+['c1','    if (text1[i - 1] == text2[j - 1])'],
+['c2','        memo[i, j] = 1 + Lcs(text1, text2, i - 1, j - 1, memo);'],
+['e2','    else'],
+['p1','        int opcion1 = Lcs(text1, text2, i - 1, j, memo);'],
+['p2','        int opcion2 = Lcs(text1, text2, i, j - 1, memo);'],
+['i3','        if (opcion1 > opcion2)'],['a1','            memo[i, j] = opcion1;'],
+['e3','        else'],['a2','            memo[i, j] = opcion2;'],
+['rt','    return memo[i, j];']];}
+
+function snap(keys,msg,o={}){
+ const lines=[].concat(keys).map(q=>K[q]);
+ steps.push({lines,msg,memo:memo.map(r=>r.slice()),stack:stack.map(f=>({...f})),vars:{...vars},out:out.slice(),
+  cur:o.cur||(stack.length?[stack[stack.length-1].i,stack[stack.length-1].j]:null),re:o.re||0,path:path?path.map(p=>p.slice()):null,back:o.back||0});
+}
+
+function lcs(i,j){
+ const f={i,j,o1:null,o2:null};stack.push(f);
+ snap('fn',`Se llama <b>Lcs(i=${i}, j=${j})</b>. Esta llamada resuelve los primeros ${i} caracteres de text1 contra los primeros ${j} de text2.`);
+ const base=(i==0||j==0);
+ snap('b1',`¿<code>i == 0 || j == 0</code>? → ${i==0} || ${j==0} → <b>${base}</b>`);
+ if(base){snap('b2',`Caso base: <b>return 0</b>. Se devuelve 0 a quien llamó (no se guarda en memo).`);stack.pop();return 0}
+ const hit=memo[i][j]!=-1;
+ snap('m1',`¿<code>memo[${i}, ${j}] != -1</code>? → ${memo[i][j]} != -1 → <b>${hit}</b>`);
+ if(hit){snap('m2',`Ya estaba calculado: <b>return ${memo[i][j]}</b> sin repetir el trabajo (memoización).`,{re:1});stack.pop();return memo[i][j]}
+ const eq=A[i-1]==B[j-1];
+ snap('c1',`¿<code>text1[${i-1}] == text2[${j-1}]</code>? → '${A[i-1]}' == '${B[j-1]}' → <b>${eq}</b>`);
+ if(eq){
+  snap('c2',`Coinciden. Para calcular <code>1 + Lcs(${i-1}, ${j-1})</code> primero se llama a Lcs(${i-1}, ${j-1}).`);
+  const v=lcs(i-1,j-1);memo[i][j]=1+v;
+  snap('c2',`Regresó ${v}. Se asigna <b>memo[${i}, ${j}] = 1 + ${v} = ${1+v}</b>.`);
+ }else{
+  snap(['e2','p1'],`No coinciden (va al else). Primero <code>opcion1 = Lcs(${i-1}, ${j})</code>: se llama a esa función.`);
+  f.o1=lcs(i-1,j);
+  snap('p1',`Regresó. <b>opcion1 = ${f.o1}</b>.`);
+  snap('p2',`Ahora <code>opcion2 = Lcs(${i}, ${j-1})</code>: se llama a esa función.`);
+  f.o2=lcs(i,j-1);
+  snap('p2',`Regresó. <b>opcion2 = ${f.o2}</b>.`);
+  const g=f.o1>f.o2;
+  snap('i3',`¿<code>opcion1 > opcion2</code>? → ${f.o1} > ${f.o2} → <b>${g}</b>`);
+  memo[i][j]=g?f.o1:f.o2;
+  snap(g?'a1':['e3','a2'],`Se asigna <b>memo[${i}, ${j}] = ${memo[i][j]}</b> (la opción más grande).`);
+ }
+ snap('rt',`<b>return memo[${i}, ${j}]</b> = ${memo[i][j]}. Se devuelve a quien llamó.`);
+ const r=memo[i][j];stack.pop();return r;
+}
+
+function build(){
+ A=$('a').value.toUpperCase().replace(/[^A-Z]/g,'')||'AB';B=$('b').value.toUpperCase().replace(/[^A-Z]/g,'')||'BA';
+ C=code();K={};C.forEach((l,i)=>K[l[0]]=i);
+ steps=[];k=0;stack=[];out=[];path=null;
+ vars={m:null,n:null,longitud:null,x:null,y:null,resultado:null};
+ memo=[];
+ snap('t1',`Se guarda la primera cadena en <code>text1</code>.`);
+ snap('t2',`Se guarda la segunda cadena en <code>text2</code>.`);
+ m=A.length;n=B.length;vars.m=m;
+ snap('m',`<b>m = ${m}</b> (longitud de text1).`);
+ vars.n=n;snap('n',`<b>n = ${n}</b> (longitud de text2).`);
+ memo=Array.from({length:m+1},()=>Array(n+1).fill(0));
+ snap('mk',`Se crea la matriz de ${m+1}×${n+1}. En C# un <code>int[,]</code> nuevo se inicializa en <b>0</b>.`);
+ memo=memo.map(r=>r.map(()=>-1));
+ snap(['f1','f2','f3'],`Los dos <code>for</code> recorren toda la matriz y ponen <b>-1</b> en cada celda ("aún no calculado").`);
+ snap('lc',`Main llama a <b>Lcs(text1, text2, ${m}, ${n}, memo)</b>: el problema completo. Empieza la recursión.`);
+ const L=lcs(m,n);
+ vars.longitud=L;
+ snap('lc',`Lcs terminó y devolvió <b>${L}</b>. Se guarda en <code>longitud</code>.`);
+ let res='';vars.resultado='""';snap('rs',`<code>resultado</code> empieza vacío.`);
+ let x=m,y=n;vars.x=x;snap('x',`<b>x = ${x}</b>`);vars.y=y;
+ path=[[x,y]];snap('y',`<b>y = ${y}</b>. La reconstrucción empieza en la esquina final (${x}, ${y}).`,{cur:[x,y],back:1});
+ const B_=(keys,msg)=>{vars.resultado='"'+res+'"';vars.x=x;vars.y=y;snap(keys,msg,{cur:[x,y],back:1})};
+ while(x>0&&y>0){
+  B_('wh',`¿<code>x > 0 &amp;&amp; y > 0</code>? → ${x} > 0 &amp;&amp; ${y} > 0 → <b>true</b>`);
+  const e=A[x-1]==B[y-1];
+  B_('eq',`¿<code>text1[${x-1}] == text2[${y-1}]</code>? → '${A[x-1]}' == '${B[y-1]}' → <b>${e}</b>`);
+  if(e){
+   res=A[x-1]+res;B_('ad',`La letra <b>${A[x-1]}</b> es parte de la respuesta y se pone al inicio: resultado = "${res}".`);
+   x--;B_('dx',`<b>x-- → x = ${x}</b>`);
+   y--;path.push([x,y]);B_('dy',`<b>y-- → y = ${y}</b>. Se avanza en diagonal (↖).`);
+  }else{
+   const a=memo[x-1][y],b=memo[x][y-1],ge=a>=b;
+   B_('ei',`¿<code>memo[${x-1}, ${y}] >= memo[${x}, ${y-1}]</code>? → ${a} >= ${b} → <b>${ge}</b>`);
+   if(ge){x--;path.push([x,y]);B_('dx2',`Se sube (↑): <b>x-- → x = ${x}</b>`)}
+   else{y--;path.push([x,y]);B_(['el','dy2'],`Va al else: se va a la izquierda (←): <b>y-- → y = ${y}</b>`)}
+  }
+ }
+ B_('wh',`¿<code>x > 0 &amp;&amp; y > 0</code>? → ${x} > 0 &amp;&amp; ${y} > 0 → <b>false</b>. El ciclo termina.`);
+ out=['Texto 1: '+A,'Texto 2: '+B,'Longitud: '+L,'Secuencia: '+res];
+ snap(['w1','w2','w3','w4'],`Se imprimen los resultados. <b>Longitud: ${L}</b>, <b>Secuencia: ${res||'(vacía)'}</b>.`,{cur:[x,y],back:1});
+ render();
+}
+
+function render(){
+ const s=steps[k];
+ $('code').innerHTML=C.map((l,i)=>`<div class="ln${s.lines.includes(i)?' on':''}"><span class="no">${i+1}</span>${esc(l[1])}</div>`).join('');
+ const on=$('code').querySelector('.on'),cb=$('cb');
+ if(on)cb.scrollTop=on.offsetTop-cb.clientHeight/2;
+ const [ci,cj]=s.cur||[-1,-1];
+ let h='<tr><th></th><th>∅</th>'+[...B].map((c,q)=>`<th class="${q==cj-1?'h':''}">${c}</th>`).join('')+'</tr>';
+ for(let i=0;i<s.memo.length;i++){
+  h+=`<tr><th class="${i&&i==ci?'h':''}">${i?A[i-1]:'∅'}</th>`;
+  for(let j=0;j<s.memo[0].length;j++){
+   const v=s.memo[i][j];let c=v==-1?'u':'';
+   if(s.path&&s.path.some(p=>p[0]==i&&p[1]==j))c='path';
+   if(i==ci&&j==cj)c=s.re?'re cur':'cur';
+   h+=`<td class="${c}">${v}</td>`;
+  }
+  h+='</tr>';
+ }
+ $('t').innerHTML=h;
+ $('msg').innerHTML=`<b style="color:var(--ac)">Línea ${s.lines[0]+1}${s.lines.length>1?'…':''}</b> · `+s.msg;
+ const v=s.vars,f=x=>x==null?'—':x;
+ $('vars').innerHTML=['m','n','longitud','x','y','resultado'].map(q=>`<div>${q} = ${f(v[q])}</div>`).join('');
+ $('st').innerHTML=s.stack.length?s.stack.slice().reverse().map((fr,q)=>`<div class="fr${q==0?' top':''}">Lcs(i=${fr.i}, j=${fr.j}) · opcion1=${f(fr.o1)} · opcion2=${f(fr.o2)}</div>`).join(''):'<span style="color:var(--mut)">vacía (estás en Main)</span>';
+ $('out').textContent=s.out.join('\n');
+ $('cnt').textContent=`Paso ${k+1}/${steps.length}`;
+ $('pv').disabled=$('rs').disabled=k==0;
+ $('nx').disabled=$('en').disabled=k==steps.length-1;
+}
+function go(d){k=Math.max(0,Math.min(steps.length-1,k+d));render();if(k==steps.length-1)stop()}
+function stop(){if(timer){clearInterval(timer);timer=null;$('pl').textContent='▶ Auto'}}
+function play(){if(timer)return stop();if(k==steps.length-1)k=0;$('pl').textContent='⏸ Pausa';timer=setInterval(()=>go(1),1100-$('sp').value*100)}
+$('nx').onclick=()=>go(1);$('pv').onclick=()=>go(-1);
+$('rs').onclick=()=>{k=0;render()};$('en').onclick=()=>{k=steps.length-1;render();stop()};
+$('bk').onclick=()=>{const q=steps.findIndex(s=>s.back);if(q>=0){k=q;render()}};
+$('pl').onclick=play;$('sp').oninput=()=>{if(timer){stop();play()}};
+$('go').onclick=()=>{stop();build()};
+build();
+</script></main></body></html>
